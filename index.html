@@ -2,633 +2,338 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title> Gyro Flight Simulator </title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Ultimate Car Racer</title>
+
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    background: #07090f;
-    color: #cde;
-    font-family: 'Segoe UI', sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 100vh;
-    padding-bottom: 24px;
-    user-select: none;
-    -webkit-user-select: none;
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
 }
 
-h3 {
-    margin: 10px 0 6px;
-    font-size: 14px;
-    letter-spacing: 1.5px;
-    color: #7ec8ff;
-    text-transform: uppercase;
+body{
+    overflow:hidden;
+    background:#000;
+    font-family:Arial,sans-serif;
 }
 
-canvas {
-    background: #000;
-    border: 2px solid #1c3550;
-    border-radius: 10px;
-    display: block;
-    touch-action: none;  /* allow touch events through to JS */
+#gameArea{
+    width:400px;
+    height:100vh;
+    background:#333;
+    margin:auto;
+    position:relative;
+    overflow:hidden;
+    border-left:5px solid white;
+    border-right:5px solid white;
 }
 
-/* ── STATUS BADGE ── */
-#statusBadge {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 11px;
-    font-family: monospace;
-    padding: 4px 10px;
-    border-radius: 20px;
-    margin: 6px 0 8px;
-    transition: all 0.3s;
-}
-#statusBadge.idle    { background:#1a1a2a; border:1px solid #334; color:#667; }
-#statusBadge.active  { background:#0a2a0a; border:1px solid #2a6a2a; color:#4caf50; }
-#statusBadge.denied  { background:#2a0a0a; border:1px solid #6a2a2a; color:#ef5350; }
-#statusBadge.nohttp  { background:#2a1a00; border:1px solid #6a4a00; color:#ffb300; }
-#statusBadge.touch   { background:#1a1a3a; border:1px solid #3a3a7a; color:#7986cb; }
-#statusDot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-}
-#statusDot.blink {
-    animation: blink 1s infinite;
-}
-@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-
-/* ── UI PANEL ── */
-.ui {
-    width: 100%;
-    max-width: 380px;
-    padding: 6px 14px;
+.line{
+    position:absolute;
+    width:10px;
+    height:100px;
+    left:195px;
+    background:white;
 }
 
-.btn-row { display: flex; gap: 8px; margin: 4px 0; }
-
-button {
-    flex: 1;
-    padding: 10px 8px;
-    font-size: 13px;
-    background: #0e1a28;
-    color: #7ec8ff;
-    border: 1px solid #1c3550;
-    border-radius: 7px;
-    cursor: pointer;
-    transition: background 0.15s;
-    -webkit-tap-highlight-color: transparent;
-}
-button:active { background: #1c2e40; }
-button.secondary { color: #8fb; border-color: #1a3a2a; background: #0a1a10; }
-
-label {
-    font-size: 13px;
-    color: #889;
-    display: block;
-    margin: 8px 0 3px;
+.car{
+    position:absolute;
+    width:50px;
+    height:90px;
+    border-radius:10px;
 }
 
-input[type=range] {
-    width: 100%;
-    accent-color: #7ec8ff;
+.player{
+    background:linear-gradient(45deg,#00ffff,#0077ff);
+    box-shadow:0 0 25px cyan;
 }
 
-/* ── SENSOR DEBUG PANEL ── */
-#sensorPanel {
-    width: 100%;
-    max-width: 380px;
-    background: #090d12;
-    border: 1px solid #1c2a3a;
-    border-radius: 7px;
-    padding: 8px 14px;
-    margin: 6px 14px 0;
-    font-size: 11px;
-    font-family: monospace;
-    color: #55a;
-    line-height: 2;
-}
-#sensorPanel.live { color: #4db8ff; border-color: #1a4060; }
-#sensorPanel b { color: #7ec8ff; }
-
-/* ── HTTPS WARNING ── */
-#httpsWarn {
-    display: none;
-    width: 100%;
-    max-width: 380px;
-    background: #1a1000;
-    border: 1px solid #664400;
-    border-radius: 7px;
-    padding: 10px 14px;
-    margin: 6px 14px 0;
-    font-size: 12px;
-    color: #ffb300;
-    line-height: 1.6;
+.enemy{
+    background:linear-gradient(45deg,#ff0000,#ff8800);
+    box-shadow:0 0 20px red;
 }
 
-/* ── TOUCH HINT ── */
-#touchHint {
-    display: none;
-    font-size: 11px;
-    color: #556;
-    text-align: center;
-    margin: 4px 0;
+#score{
+    position:fixed;
+    top:10px;
+    left:10px;
+    font-size:28px;
+    color:white;
+    z-index:100;
+}
+
+#startScreen{
+    position:absolute;
+    inset:0;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    flex-direction:column;
+    color:white;
+    background:rgba(0,0,0,.9);
+    z-index:200;
+    text-align:center;
+}
+
+#startScreen h1{
+    margin-bottom:15px;
+}
+
+#startScreen button{
+    padding:15px 30px;
+    font-size:20px;
+    cursor:pointer;
+    border:none;
+    background:cyan;
+    border-radius:10px;
+}
+
+.particle{
+    position:absolute;
+    border-radius:50%;
+    pointer-events:none;
 }
 </style>
 </head>
 <body>
 
-<h3>✈️ Gyro Flight Simulator</h3>
+<div id="score">Score: 0</div>
 
-<div id="statusBadge" class="idle">
-    <span id="statusDot"></span>
-    <span id="statusText">Gyro not started</span>
-</div>
-
-<canvas id="canvas" width="360" height="400"></canvas>
-
-<p id="touchHint">📱 No gyro? Drag on canvas to fly</p>
-
-<div class="ui">
-    <div class="btn-row">
-        <button id="startBtn" type="button">▶ Enable Gyro</button>
-        <button id="calibrateBtn" type="button" class="secondary">⊕ Set Neutral</button>
+<div id="gameArea">
+    <div id="startScreen">
+        <h1>🏎️ CAR RACER</h1>
+        <p>Arrow Keys to Move</p>
+        <br>
+        <button onclick="start()">START GAME</button>
     </div>
-
-    <label>Throttle: <span id="throttleVal">50</span>%</label>
-    <input type="range" id="throttle" min="0" max="100" value="50">
-</div>
-
-<div id="httpsWarn">
-    ⚠️ <b>HTTPS required for gyro.</b><br>
-    Open this file via <code>https://</code> or use a local server.<br>
-    On iOS/Android, gyro is blocked on plain <code>http://</code> origins.<br>
-    <b>Touch drag fallback is active.</b>
-</div>
-
-<div id="sensorPanel">
-    <b>Sensor</b><br>
-    β (pitch) : <span id="dbBeta">—</span>°<br>
-    γ (roll)  : <span id="dbGamma">—</span>°<br>
-    α (yaw)   : <span id="dbAlpha">—</span>°<br>
-    Events    : <span id="dbCount">0</span>
 </div>
 
 <script>
-// ══════════════════════════════════════════════
-// GYRO STATE MACHINE
-// States: idle → requesting → active | denied | unsupported
-// Fallback: touch drag when gyro unavailable
-// ══════════════════════════════════════════════
+const gameArea = document.getElementById("gameArea");
+const scoreBox = document.getElementById("score");
+const startScreen = document.getElementById("startScreen");
 
-const canvas = document.getElementById("canvas");
-const ctx    = canvas.getContext("2d");
-const W = canvas.width, H = canvas.height;
+let player = {
+    speed: 6,
+    score: 0,
+    start: false
+};
 
-// ── Sensor raw values ──
-let beta = 0, gamma = 0, alpha = 0;
-let gyroEventCount = 0;
-let gyroActive = false;   // true once real events with non-zero data arrive
+let keys = {
+    ArrowUp:false,
+    ArrowDown:false,
+    ArrowLeft:false,
+    ArrowRight:false
+};
 
-// ── Smoothed values (EMA) ──
-let smoothBeta = 0, smoothGamma = 0;
-const SMOOTH = 0.82;
-
-// ── Calibration ──
-let betaOffset = 0, gammaOffset = 0;
-
-// ── Touch drag fallback ──
-let touchActive = false;
-let touchPitch = 0, touchRoll = 0;  // degrees simulated from drag
-
-// ── PHYSICS ──
-const GRAVITY        = 0.08;
-const DRAG           = 0.985;
-const THRUST_SCALE   = 0.012;
-const CLIMB_SCALE    = 0.12;
-const STALL_ALPHA    = 18;
-const STALL_VEL      = 1.5;
-const STALL_VEL_DRAG = 0.97;
-const STALL_ALT_DRAG = 0.5;
-const MAX_FWD_PX     = 80;
-
-let velocity  = 0;
-let altitude  = 100;
-let heading   = 0;
-let isStalling = false;
-
-// ══════════════════════════════════════════════
-// STATUS UI
-// ══════════════════════════════════════════════
-function setStatus(state, msg) {
-    const badge = document.getElementById("statusBadge");
-    const dot   = document.getElementById("statusDot");
-    const text  = document.getElementById("statusText");
-    badge.className = ""; badge.classList.add(state);
-    text.textContent = msg;
-    dot.className = (state === "active" || state === "touch") ? "blink" : "";
-}
-
-// ══════════════════════════════════════════════
-// HTTPS CHECK
-// Gyro requires secure context on iOS Safari 13+ and Chrome Android
-// ══════════════════════════════════════════════
-const isSecure = location.protocol === "https:" || location.hostname === "localhost" || location.hostname === "127.0.0.1";
-if (!isSecure) {
-    document.getElementById("httpsWarn").style.display = "block";
-    document.getElementById("touchHint").style.display = "block";
-    setStatus("nohttp", "HTTP — gyro blocked by browser");
-}
-
-// ══════════════════════════════════════════════
-// GYRO ACTIVATION
-// Handles three cases:
-//   1. iOS 13+ — must call requestPermission() from user gesture
-//   2. Android / others — just add listener (no permission API)
-//   3. DeviceOrientationEvent absent — fully unsupported, use touch
-// ══════════════════════════════════════════════
-document.getElementById("startBtn").addEventListener("click", startGyro);
-
-function startGyro() {
-    // DeviceOrientationEvent not available at all (desktop, some browsers)
-    if (typeof DeviceOrientationEvent === "undefined") {
-        activateTouchFallback("No gyro sensor detected");
-        return;
-    }
-
-    // iOS 13+ requires explicit permission
-    if (typeof DeviceOrientationEvent.requestPermission === "function") {
-        DeviceOrientationEvent.requestPermission()
-            .then(state => {
-                if (state === "granted") {
-                    attachGyroListener();
-                } else {
-                    // User denied — fall back to touch
-                    setStatus("denied", "Permission denied — using touch");
-                    document.getElementById("touchHint").style.display = "block";
-                    activateTouchFallback("Gyro denied — drag to fly");
-                }
-            })
-            .catch(err => {
-                // requestPermission must be called from user gesture;
-                // if it rejects it means we're not in a user gesture context
-                setStatus("denied", "Permission error: " + err.message);
-                activateTouchFallback("Permission error — drag to fly");
-            });
-    } else {
-        // Android / non-iOS: just attach and verify data arrives
-        attachGyroListener();
-    }
-}
-
-function attachGyroListener() {
-    setStatus("idle", "Waiting for sensor data…");
-
-    // Try primary event first
-    let listening = false;
-
-    function onOrientation(e) {
-        // Some browsers fire the event but return all nulls —
-        // treat that as "no sensor" and fall back to touch
-        if (e.beta === null && e.gamma === null) {
-            if (!listening) {
-                window.removeEventListener("deviceorientation", onOrientation);
-                window.removeEventListener("deviceorientationabsolute", onOrientation);
-                activateTouchFallback("Sensor returned null — drag to fly");
-            }
-            return;
-        }
-
-        // First real data — mark as active
-        if (!listening) {
-            listening = true;
-            gyroActive = true;
-            setStatus("active", "Gyro active ✓");
-            document.getElementById("startBtn").textContent = "✓ Gyro Live";
-            document.getElementById("startBtn").disabled = true;
-        }
-
-        beta  = e.beta  ?? 0;
-        gamma = e.gamma ?? 0;
-        alpha = e.alpha ?? 0;
-        gyroEventCount++;
-
-        // Live sensor debug panel
-        document.getElementById("sensorPanel").classList.add("live");
-        document.getElementById("dbBeta").textContent  = beta.toFixed(1);
-        document.getElementById("dbGamma").textContent = gamma.toFixed(1);
-        document.getElementById("dbAlpha").textContent = alpha.toFixed(1);
-        document.getElementById("dbCount").textContent = gyroEventCount;
-    }
-
-    window.addEventListener("deviceorientation", onOrientation, true);
-
-    // Android fallback: some devices only fire deviceorientationabsolute
-    window.addEventListener("deviceorientationabsolute", onOrientation, true);
-
-    // If nothing fires in 2.5s, fall back to touch
-    setTimeout(() => {
-        if (!listening) {
-            window.removeEventListener("deviceorientation", onOrientation, true);
-            window.removeEventListener("deviceorientationabsolute", onOrientation, true);
-            activateTouchFallback("No sensor data — drag to fly");
-        }
-    }, 2500);
-}
-
-// ══════════════════════════════════════════════
-// TOUCH DRAG FALLBACK
-// Maps drag delta → pitch/roll in degrees
-// ══════════════════════════════════════════════
-function activateTouchFallback(msg) {
-    setStatus("touch", msg);
-    touchActive = true;
-    document.getElementById("touchHint").style.display = "block";
-
-    let lastX = null, lastY = null;
-
-    canvas.addEventListener("touchstart", e => {
-        e.preventDefault();
-        const t = e.touches[0];
-        lastX = t.clientX; lastY = t.clientY;
-    }, { passive: false });
-
-    canvas.addEventListener("touchmove", e => {
-        e.preventDefault();
-        const t = e.touches[0];
-        const dx = t.clientX - lastX;
-        const dy = t.clientY - lastY;
-        touchRoll  = Math.max(-45, Math.min(45, touchRoll  + dx * 0.4));
-        touchPitch = Math.max(-30, Math.min(30, touchPitch - dy * 0.4));
-        lastX = t.clientX; lastY = t.clientY;
-    }, { passive: false });
-
-    canvas.addEventListener("touchend", () => {
-        // Gradually return to neutral on release
-        const decay = setInterval(() => {
-            touchPitch *= 0.85;
-            touchRoll  *= 0.85;
-            if (Math.abs(touchPitch) < 0.2 && Math.abs(touchRoll) < 0.2) {
-                touchPitch = touchRoll = 0;
-                clearInterval(decay);
-            }
-        }, 30);
-    });
-
-    // Mouse fallback for desktop testing
-    let mouseDown = false;
-    canvas.addEventListener("mousedown", e => { mouseDown = true; lastX = e.clientX; lastY = e.clientY; });
-    canvas.addEventListener("mousemove", e => {
-        if (!mouseDown) return;
-        const dx = e.clientX - lastX;
-        const dy = e.clientY - lastY;
-        touchRoll  = Math.max(-45, Math.min(45, touchRoll  + dx * 0.3));
-        touchPitch = Math.max(-30, Math.min(30, touchPitch - dy * 0.3));
-        lastX = e.clientX; lastY = e.clientY;
-    });
-    canvas.addEventListener("mouseup", () => { mouseDown = false; });
-}
-
-// ══════════════════════════════════════════════
-// CALIBRATE — capture current tilt as "neutral"
-// ══════════════════════════════════════════════
-document.getElementById("calibrateBtn").addEventListener("click", () => {
-    betaOffset  = smoothBeta;
-    gammaOffset = smoothGamma;
-    document.getElementById("calibrateBtn").textContent = "⊕ Neutral Set ✓";
-    setTimeout(() => {
-        document.getElementById("calibrateBtn").textContent = "⊕ Set Neutral";
-    }, 1500);
+document.addEventListener("keydown",e=>{
+    if(keys.hasOwnProperty(e.key))
+        keys[e.key]=true;
 });
 
-// ══════════════════════════════════════════════
-// THROTTLE
-// ══════════════════════════════════════════════
-const throttleEl = document.getElementById("throttle");
-const throttleVal = document.getElementById("throttleVal");
-throttleEl.addEventListener("input", e => {
-    throttleVal.textContent = e.target.value;
+document.addEventListener("keyup",e=>{
+    if(keys.hasOwnProperty(e.key))
+        keys[e.key]=false;
 });
 
-// ══════════════════════════════════════════════
-// DRAWING
-// ══════════════════════════════════════════════
-function drawHorizon(pitch, roll, fwdPx) {
-    ctx.save();
-    ctx.translate(W/2, H/2);
-    ctx.rotate(-roll * Math.PI / 180);
+function start(){
 
-    const offset = Math.max(-MAX_FWD_PX, Math.min(MAX_FWD_PX, pitch * 3.5 + fwdPx));
+    startScreen.style.display="none";
 
-    // Sky gradient
-    const skyGrad = ctx.createLinearGradient(0, -H, 0, offset);
-    skyGrad.addColorStop(0, "#0a1628");
-    skyGrad.addColorStop(1, "#1a6abf");
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(-W, -H, W*2, H + offset);
+    gameArea.innerHTML="";
 
-    // Ground gradient
-    const gndGrad = ctx.createLinearGradient(0, offset, 0, H);
-    gndGrad.addColorStop(0, "#5d4037");
-    gndGrad.addColorStop(1, "#3e2723");
-    ctx.fillStyle = gndGrad;
-    ctx.fillRect(-W, offset, W*2, H);
+    player.start=true;
+    player.score=0;
+    player.speed=6;
 
-    // Horizon line
-    ctx.strokeStyle = "rgba(255,255,255,0.85)";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(-W, offset);
-    ctx.lineTo( W, offset);
-    ctx.stroke();
-
-    // Pitch ladder (degree marks)
-    ctx.strokeStyle = "rgba(255,255,255,0.35)";
-    ctx.fillStyle   = "rgba(255,255,255,0.5)";
-    ctx.font = "9px monospace";
-    ctx.textAlign = "right";
-    ctx.lineWidth = 1;
-    for (let d = -30; d <= 30; d += 10) {
-        if (d === 0) continue;
-        const y = offset - d * 3.5;
-        const len = (d % 20 === 0) ? 28 : 16;
-        ctx.beginPath();
-        ctx.moveTo(-len, y); ctx.lineTo(len, y);
-        ctx.stroke();
-        ctx.fillText(d, -len - 3, y + 3);
+    for(let i=0;i<5;i++){
+        let roadLine=document.createElement("div");
+        roadLine.classList.add("line");
+        roadLine.y=(i*150);
+        roadLine.style.top=roadLine.y+"px";
+        gameArea.appendChild(roadLine);
     }
 
-    ctx.restore();
-}
+    let car=document.createElement("div");
+    car.classList.add("car","player");
 
-function drawHUD(pitch, roll, stalling) {
-    ctx.save();
-    ctx.translate(W/2, H/2);
+    car.style.left="175px";
+    car.style.top="500px";
 
-    const col = stalling ? "#ff4040" : "#00e87a";
+    gameArea.appendChild(car);
 
-    // Wing bars
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(-80,  8); ctx.lineTo(-30, 8);
-    ctx.moveTo( 80,  8); ctx.lineTo( 30, 8);
-    ctx.moveTo(-30,  8); ctx.lineTo(-30, 0);
-    ctx.moveTo( 30,  8); ctx.lineTo( 30, 0);
-    ctx.stroke();
+    player.x=car.offsetLeft;
+    player.y=car.offsetTop;
 
-    // Center dot
-    ctx.fillStyle = col;
-    ctx.beginPath();
-    ctx.arc(0, 0, 3.5, 0, Math.PI*2);
-    ctx.fill();
+    car.setAttribute("id","playerCar");
 
-    // Roll indicator arc at top
-    const rollRad = roll * Math.PI / 180;
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(0, 0, H/2 - 20, -Math.PI/2 - 0.6, -Math.PI/2 + 0.6);
-    ctx.stroke();
-    // Roll pointer
-    ctx.strokeStyle = "#ffcc00";
-    ctx.lineWidth = 2;
-    ctx.save();
-    ctx.rotate(rollRad);
-    ctx.beginPath();
-    ctx.moveTo(0, -(H/2 - 20));
-    ctx.lineTo(-5, -(H/2 - 10));
-    ctx.lineTo( 5, -(H/2 - 10));
-    ctx.closePath();
-    ctx.strokeStyle = "#ffcc00";
-    ctx.fillStyle   = "#ffcc00";
-    ctx.fill();
-    ctx.restore();
+    for(let x=0;x<4;x++){
+        let enemy=document.createElement("div");
+        enemy.classList.add("car","enemy");
 
-    // Stall warning
-    if (stalling) {
-        ctx.font = "bold 15px monospace";
-        ctx.fillStyle = "#ff4040";
-        ctx.textAlign = "center";
-        ctx.fillText("⚠  STALL  ⚠", 0, -50);
+        enemy.y=((x+1)*-250);
+
+        enemy.style.left=(Math.floor(Math.random()*350))+"px";
+        enemy.style.top=enemy.y+"px";
+
+        gameArea.appendChild(enemy);
     }
 
-    ctx.restore();
+    window.requestAnimationFrame(gamePlay);
 }
 
-function drawTelemetry(altitude, velocity, heading, pitch, mode, isStalling) {
-    // Left panel bg
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, 0, 152, 95);
+function moveLines() {
 
-    ctx.font = "11px monospace";
-    const green = "#00e87a", warn = "#ff6644", blue = "#7ec8ff";
+    let lines=document.querySelectorAll(".line");
 
-    const rows = [
-        { label:"ALT", val: altitude.toFixed(1)+" m",    color: altitude < 10 ? warn : green },
-        { label:"VEL", val: velocity.toFixed(2)+" kts",  color: green },
-        { label:"HDG", val: heading.toFixed(1)+"°",      color: blue },
-        { label:"PCH", val: pitch.toFixed(1)+"°",        color: green },
-        { label:"MODE",val: mode,                         color: isStalling ? "#ff4040" : blue },
-    ];
+    lines.forEach(item=>{
 
-    rows.forEach((r, i) => {
-        ctx.fillStyle = "#556";
-        ctx.fillText(r.label+":", 8, 16 + i*17);
-        ctx.fillStyle = r.color;
-        ctx.fillText(r.val, 52, 16 + i*17);
+        if(item.y>=700)
+            item.y-=750;
+
+        item.y+=player.speed*1.5;
+
+        item.style.top=item.y+"px";
     });
-
-    // Throttle bar — right edge
-    const t = parseInt(throttleEl.value) / 100;
-    const bx = W - 22, by = 8, bh = 100;
-    ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(bx - 2, by - 2, 18, bh + 4);
-    ctx.fillStyle = t > 0.7 ? "#ffaa00" : "#2288ff";
-    ctx.fillRect(bx, by + (1-t)*bh, 14, t * bh);
-    ctx.fillStyle = "#556";
-    ctx.font = "9px monospace";
-    ctx.fillText("THR", bx - 1, by + bh + 12);
-
-    // Gyro mode badge bottom-right
-    const modeLabel = gyroActive ? "GYRO" : (touchActive ? "TOUCH" : "IDLE");
-    const modeColor = gyroActive ? "#00e87a" : (touchActive ? "#7986cb" : "#445");
-    ctx.fillStyle = modeColor;
-    ctx.font = "9px monospace";
-    ctx.textAlign = "right";
-    ctx.fillText(modeLabel, W - 6, H - 8);
-    ctx.textAlign = "left";
 }
 
-// ══════════════════════════════════════════════
-// MAIN LOOP
-// ══════════════════════════════════════════════
-function loop() {
-    ctx.clearRect(0, 0, W, H);
+function createSpark(x,y){
 
-    // ── Smooth sensor (EMA) ──
-    smoothBeta  = SMOOTH * smoothBeta  + (1 - SMOOTH) * beta;
-    smoothGamma = SMOOTH * smoothGamma + (1 - SMOOTH) * gamma;
+    for(let i=0;i<20;i++){
 
-    // ── Effective pitch & roll (from gyro or touch) ──
-    let pitch, roll;
-    if (gyroActive) {
-        pitch = smoothBeta  - betaOffset;
-        roll  = smoothGamma - gammaOffset;
-    } else {
-        pitch = touchPitch;
-        roll  = touchRoll;
+        let p=document.createElement("div");
+        p.classList.add("particle");
+
+        let size=Math.random()*8+4;
+
+        p.style.width=size+"px";
+        p.style.height=size+"px";
+
+        p.style.background=
+        `hsl(${Math.random()*60},100%,50%)`;
+
+        p.style.left=x+"px";
+        p.style.top=y+"px";
+
+        gameArea.appendChild(p);
+
+        let dx=(Math.random()-0.5)*10;
+        let dy=(Math.random()-0.5)*10;
+
+        let life=30;
+
+        let interval=setInterval(()=>{
+
+            x+=dx;
+            y+=dy;
+
+            p.style.left=x+"px";
+            p.style.top=y+"px";
+
+            p.style.opacity=life/30;
+
+            life--;
+
+            if(life<=0){
+                clearInterval(interval);
+                p.remove();
+            }
+
+        },16);
     }
-
-    const throttle = parseInt(throttleEl.value);
-
-    // ── VELOCITY: thrust - drag ──
-    velocity += (throttle - 50) * THRUST_SCALE;
-    velocity *= DRAG;
-    velocity  = Math.max(0, velocity);
-
-    // ── ALTITUDE: climb = v × sin(pitch) - gravity ──
-    const pitchRad = pitch * Math.PI / 180;
-    altitude += velocity * Math.sin(pitchRad) * CLIMB_SCALE;
-    altitude -= GRAVITY;
-
-    // ── STALL ──
-    isStalling = (velocity < STALL_VEL && pitch > STALL_ALPHA);
-    if (isStalling) {
-        altitude -= STALL_ALT_DRAG;
-        velocity *= STALL_VEL_DRAG;
-    }
-    altitude = Math.max(0, altitude);
-
-    // ── HEADING: turn rate ∝ roll × velocity ──
-    heading += roll * velocity * 0.005;
-    heading  = ((heading % 360) + 360) % 360;
-
-    // ── HORIZON FORWARD OFFSET ──
-    const fwdPx = Math.min(velocity * 4, MAX_FWD_PX);
-
-    // ── FLIGHT MODE ──
-    let mode = "CRUISE";
-    if      (altitude <= 0 && velocity < 0.5) mode = "GROUND";
-    else if (isStalling)                       mode = "STALL";
-    else if (velocity < 0.5)                  mode = "GROUND";
-    else if (pitch >  STALL_ALPHA - 2)        mode = "CLIMB";
-    else if (pitch < -10)                     mode = "DESCENT";
-
-    // ── DRAW ──
-    drawHorizon(pitch, roll, fwdPx);
-    drawHUD(pitch, roll, isStalling);
-    drawTelemetry(altitude, velocity, heading, pitch, mode, isStalling);
-
-    requestAnimationFrame(loop);
 }
 
-loop();
+function isCollide(a,b){
+
+    a=a.getBoundingClientRect();
+    b=b.getBoundingClientRect();
+
+    return !(
+        a.bottom < b.top ||
+        a.top > b.bottom ||
+        a.right < b.left ||
+        a.left > b.right
+    );
+}
+
+function moveEnemy(car){
+
+    let enemy=document.querySelectorAll(".enemy");
+
+    enemy.forEach(item=>{
+
+        if(isCollide(car,item)){
+
+            createSpark(
+                item.offsetLeft+20,
+                item.offsetTop+20
+            );
+
+            player.start=false;
+
+            startScreen.style.display="flex";
+            startScreen.innerHTML=`
+            <h1>💥 GAME OVER</h1>
+            <h2>Score : ${player.score}</h2>
+            <br>
+            <button onclick="location.reload()">
+            Play Again
+            </button>`;
+        }
+
+        if(item.y>=750){
+
+            item.y=-300;
+            item.style.left=
+            Math.floor(Math.random()*350)+"px";
+        }
+
+        item.y+=player.speed;
+
+        item.style.top=item.y+"px";
+    });
+}
+
+function gamePlay(){
+
+    let car=document.getElementById("playerCar");
+
+    let road=gameArea.getBoundingClientRect();
+
+    if(player.start){
+
+        moveLines();
+        moveEnemy(car);
+
+        if(keys.ArrowLeft && player.x>0)
+            player.x-=player.speed+2;
+
+        if(keys.ArrowRight && player.x<350)
+            player.x+=player.speed+2;
+
+        if(keys.ArrowUp && player.y>0)
+            player.y-=player.speed;
+
+        if(keys.ArrowDown && player.y<road.height-100)
+            player.y+=player.speed;
+
+        car.style.left=player.x+"px";
+        car.style.top=player.y+"px";
+
+        player.score++;
+
+        if(player.score%1000===0){
+            player.speed+=0.5;
+        }
+
+        scoreBox.innerHTML=
+        "Score: "+player.score;
+
+        requestAnimationFrame(gamePlay);
+    }
+}
 </script>
+
 </body>
 </html>
