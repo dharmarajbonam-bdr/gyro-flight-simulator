@@ -1,338 +1,243 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Ultimate Car Racer</title>
+<title>Breakout Game</title>
 
 <style>
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-}
-
 body{
-    overflow:hidden;
-    background:#000;
-    font-family:Arial,sans-serif;
-}
-
-#gameArea{
-    width:400px;
-    height:100vh;
-    background:#333;
-    margin:auto;
-    position:relative;
-    overflow:hidden;
-    border-left:5px solid white;
-    border-right:5px solid white;
-}
-
-.line{
-    position:absolute;
-    width:10px;
-    height:100px;
-    left:195px;
-    background:white;
-}
-
-.car{
-    position:absolute;
-    width:50px;
-    height:90px;
-    border-radius:10px;
-}
-
-.player{
-    background:linear-gradient(45deg,#00ffff,#0077ff);
-    box-shadow:0 0 25px cyan;
-}
-
-.enemy{
-    background:linear-gradient(45deg,#ff0000,#ff8800);
-    box-shadow:0 0 20px red;
-}
-
-#score{
-    position:fixed;
-    top:10px;
-    left:10px;
-    font-size:28px;
-    color:white;
-    z-index:100;
-}
-
-#startScreen{
-    position:absolute;
-    inset:0;
+    margin:0;
+    background:#111;
     display:flex;
     justify-content:center;
     align-items:center;
-    flex-direction:column;
-    color:white;
-    background:rgba(0,0,0,.9);
-    z-index:200;
-    text-align:center;
+    height:100vh;
+    overflow:hidden;
+    font-family:Arial,sans-serif;
 }
 
-#startScreen h1{
-    margin-bottom:15px;
-}
-
-#startScreen button{
-    padding:15px 30px;
-    font-size:20px;
-    cursor:pointer;
-    border:none;
-    background:cyan;
-    border-radius:10px;
-}
-
-.particle{
-    position:absolute;
-    border-radius:50%;
-    pointer-events:none;
+canvas{
+    background:#000;
+    border:3px solid #fff;
+    box-shadow:0 0 30px cyan;
 }
 </style>
 </head>
 <body>
 
-<div id="score">Score: 0</div>
-
-<div id="gameArea">
-    <div id="startScreen">
-        <h1>🏎️ CAR RACER</h1>
-        <p>Arrow Keys to Move</p>
-        <br>
-        <button onclick="start()">START GAME</button>
-    </div>
-</div>
+<canvas id="gameCanvas" width="900" height="600"></canvas>
 
 <script>
-const gameArea = document.getElementById("gameArea");
-const scoreBox = document.getElementById("score");
-const startScreen = document.getElementById("startScreen");
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 
-let player = {
-    speed: 6,
-    score: 0,
-    start: false
+let score = 0;
+
+// Paddle
+const paddle = {
+    width: 140,
+    height: 15,
+    x: canvas.width / 2 - 70,
+    y: canvas.height - 30,
+    speed: 10
 };
 
-let keys = {
-    ArrowUp:false,
-    ArrowDown:false,
-    ArrowLeft:false,
-    ArrowRight:false
+// Ball
+const ball = {
+    x: canvas.width / 2,
+    y: canvas.height - 50,
+    radius: 12,
+    dx: 5,
+    dy: -5
 };
+
+const keys = {
+    left:false,
+    right:false
+};
+
+// Bricks
+const brickRows = 6;
+const brickCols = 10;
+const brickWidth = 80;
+const brickHeight = 25;
+const brickPadding = 10;
+const brickOffsetTop = 50;
+const brickOffsetLeft = 25;
+
+const bricks = [];
+
+for(let r=0;r<brickRows;r++){
+    bricks[r]=[];
+    for(let c=0;c<brickCols;c++){
+        bricks[r][c]={
+            x:0,
+            y:0,
+            status:1,
+            color:`hsl(${r*60},80%,60%)`
+        };
+    }
+}
 
 document.addEventListener("keydown",e=>{
-    if(keys.hasOwnProperty(e.key))
-        keys[e.key]=true;
+    if(e.key==="ArrowLeft") keys.left=true;
+    if(e.key==="ArrowRight") keys.right=true;
 });
 
 document.addEventListener("keyup",e=>{
-    if(keys.hasOwnProperty(e.key))
-        keys[e.key]=false;
+    if(e.key==="ArrowLeft") keys.left=false;
+    if(e.key==="ArrowRight") keys.right=false;
 });
 
-function start(){
-
-    startScreen.style.display="none";
-
-    gameArea.innerHTML="";
-
-    player.start=true;
-    player.score=0;
-    player.speed=6;
-
-    for(let i=0;i<5;i++){
-        let roadLine=document.createElement("div");
-        roadLine.classList.add("line");
-        roadLine.y=(i*150);
-        roadLine.style.top=roadLine.y+"px";
-        gameArea.appendChild(roadLine);
-    }
-
-    let car=document.createElement("div");
-    car.classList.add("car","player");
-
-    car.style.left="175px";
-    car.style.top="500px";
-
-    gameArea.appendChild(car);
-
-    player.x=car.offsetLeft;
-    player.y=car.offsetTop;
-
-    car.setAttribute("id","playerCar");
-
-    for(let x=0;x<4;x++){
-        let enemy=document.createElement("div");
-        enemy.classList.add("car","enemy");
-
-        enemy.y=((x+1)*-250);
-
-        enemy.style.left=(Math.floor(Math.random()*350))+"px";
-        enemy.style.top=enemy.y+"px";
-
-        gameArea.appendChild(enemy);
-    }
-
-    window.requestAnimationFrame(gamePlay);
+function drawBall(){
+    ctx.beginPath();
+    ctx.arc(ball.x,ball.y,ball.radius,0,Math.PI*2);
+    ctx.fillStyle="cyan";
+    ctx.shadowBlur=25;
+    ctx.shadowColor="cyan";
+    ctx.fill();
+    ctx.closePath();
+    ctx.shadowBlur=0;
 }
 
-function moveLines() {
-
-    let lines=document.querySelectorAll(".line");
-
-    lines.forEach(item=>{
-
-        if(item.y>=700)
-            item.y-=750;
-
-        item.y+=player.speed*1.5;
-
-        item.style.top=item.y+"px";
-    });
-}
-
-function createSpark(x,y){
-
-    for(let i=0;i<20;i++){
-
-        let p=document.createElement("div");
-        p.classList.add("particle");
-
-        let size=Math.random()*8+4;
-
-        p.style.width=size+"px";
-        p.style.height=size+"px";
-
-        p.style.background=
-        `hsl(${Math.random()*60},100%,50%)`;
-
-        p.style.left=x+"px";
-        p.style.top=y+"px";
-
-        gameArea.appendChild(p);
-
-        let dx=(Math.random()-0.5)*10;
-        let dy=(Math.random()-0.5)*10;
-
-        let life=30;
-
-        let interval=setInterval(()=>{
-
-            x+=dx;
-            y+=dy;
-
-            p.style.left=x+"px";
-            p.style.top=y+"px";
-
-            p.style.opacity=life/30;
-
-            life--;
-
-            if(life<=0){
-                clearInterval(interval);
-                p.remove();
-            }
-
-        },16);
-    }
-}
-
-function isCollide(a,b){
-
-    a=a.getBoundingClientRect();
-    b=b.getBoundingClientRect();
-
-    return !(
-        a.bottom < b.top ||
-        a.top > b.bottom ||
-        a.right < b.left ||
-        a.left > b.right
+function drawPaddle(){
+    ctx.fillStyle="#00ff88";
+    ctx.fillRect(
+        paddle.x,
+        paddle.y,
+        paddle.width,
+        paddle.height
     );
 }
 
-function moveEnemy(car){
+function drawBricks(){
 
-    let enemy=document.querySelectorAll(".enemy");
+    for(let r=0;r<brickRows;r++){
 
-    enemy.forEach(item=>{
+        for(let c=0;c<brickCols;c++){
 
-        if(isCollide(car,item)){
+            if(bricks[r][c].status){
 
-            createSpark(
-                item.offsetLeft+20,
-                item.offsetTop+20
-            );
+                let brickX =
+                    c*(brickWidth+brickPadding)
+                    + brickOffsetLeft;
 
-            player.start=false;
+                let brickY =
+                    r*(brickHeight+brickPadding)
+                    + brickOffsetTop;
 
-            startScreen.style.display="flex";
-            startScreen.innerHTML=`
-            <h1>💥 GAME OVER</h1>
-            <h2>Score : ${player.score}</h2>
-            <br>
-            <button onclick="location.reload()">
-            Play Again
-            </button>`;
+                bricks[r][c].x=brickX;
+                bricks[r][c].y=brickY;
+
+                ctx.fillStyle=bricks[r][c].color;
+
+                ctx.fillRect(
+                    brickX,
+                    brickY,
+                    brickWidth,
+                    brickHeight
+                );
+            }
         }
-
-        if(item.y>=750){
-
-            item.y=-300;
-            item.style.left=
-            Math.floor(Math.random()*350)+"px";
-        }
-
-        item.y+=player.speed;
-
-        item.style.top=item.y+"px";
-    });
-}
-
-function gamePlay(){
-
-    let car=document.getElementById("playerCar");
-
-    let road=gameArea.getBoundingClientRect();
-
-    if(player.start){
-
-        moveLines();
-        moveEnemy(car);
-
-        if(keys.ArrowLeft && player.x>0)
-            player.x-=player.speed+2;
-
-        if(keys.ArrowRight && player.x<350)
-            player.x+=player.speed+2;
-
-        if(keys.ArrowUp && player.y>0)
-            player.y-=player.speed;
-
-        if(keys.ArrowDown && player.y<road.height-100)
-            player.y+=player.speed;
-
-        car.style.left=player.x+"px";
-        car.style.top=player.y+"px";
-
-        player.score++;
-
-        if(player.score%1000===0){
-            player.speed+=0.5;
-        }
-
-        scoreBox.innerHTML=
-        "Score: "+player.score;
-
-        requestAnimationFrame(gamePlay);
     }
 }
+
+function drawScore(){
+    ctx.fillStyle="white";
+    ctx.font="24px Arial";
+    ctx.fillText("Score: "+score,20,30);
+}
+
+function collisionDetection(){
+
+    for(let r=0;r<brickRows;r++){
+
+        for(let c=0;c<brickCols;c++){
+
+            let b=bricks[r][c];
+
+            if(b.status){
+
+                if(
+                    ball.x > b.x &&
+                    ball.x < b.x + brickWidth &&
+                    ball.y > b.y &&
+                    ball.y < b.y + brickHeight
+                ){
+                    ball.dy = -ball.dy;
+                    b.status = 0;
+                    score++;
+
+                    if(score === brickRows*brickCols){
+
+                        alert("🏆 You Win!");
+                        document.location.reload();
+                    }
+                }
+            }
+        }
+    }
+}
+
+function update(){
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    drawBricks();
+    drawBall();
+    drawPaddle();
+    drawScore();
+
+    collisionDetection();
+
+    ball.x += ball.dx;
+    ball.y += ball.dy;
+
+    if(
+        ball.x + ball.radius > canvas.width ||
+        ball.x - ball.radius < 0
+    ){
+        ball.dx = -ball.dx;
+    }
+
+    if(ball.y - ball.radius < 0){
+        ball.dy = -ball.dy;
+    }
+
+    if(
+        ball.y + ball.radius >
+        paddle.y &&
+        ball.x > paddle.x &&
+        ball.x < paddle.x + paddle.width
+    ){
+        ball.dy = -ball.dy;
+    }
+
+    if(ball.y > canvas.height){
+        alert("💀 Game Over!");
+        document.location.reload();
+    }
+
+    if(keys.left && paddle.x > 0){
+        paddle.x -= paddle.speed;
+    }
+
+    if(
+        keys.right &&
+        paddle.x + paddle.width < canvas.width
+    ){
+        paddle.x += paddle.speed;
+    }
+
+    requestAnimationFrame(update);
+}
+
+update();
 </script>
 
 </body>
